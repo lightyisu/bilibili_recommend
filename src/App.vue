@@ -23,7 +23,7 @@
         <n-card hoverable>
           <template v-if="!loading" #cover>
             <a :href="item.uri" target="_blank">
-              <img :src="item.pic+'@672w_378h_1c.webp'" />
+              <img :src="item.pic + '@672w_378h_1c.webp'" />
             </a>
           </template>
           <template v-if="loading" #cover>
@@ -69,6 +69,11 @@
         <n-skeleton v-if="loading" :sharp="false" height="30px" width="100%" />
       </div>
     </div>
+    <n-result v-if="internetStatus=='noInternet'" status="500" title="API错误" description="可能未连上后端服务器">
+      <template #footer>
+        <n-button>好的</n-button>
+      </template>
+    </n-result>
   </n-scrollbar>
 </template>
 
@@ -83,12 +88,20 @@ let loading = ref(true);
 let refresh_icon = ref({
   transform: "rotate(0deg)",
 });
+let internetStatus=ref('')
 let getTheData = () => {
   loading.value = true;
-  axios.get("http://localhost:8080/recommend").then((res) => {
-    items.value = res.data.data.item;
-    loading.value = false;
-  });
+  axios
+    .get("http://localhost:8080/recommend")
+    .then((res) => {
+      internetStatus.value=''
+      items.value = res.data.data.item;
+      loading.value = false;
+    })
+    .catch((err) => {
+      console.log("err", err);
+      internetStatus.value='noInternet'
+    });
 };
 let refresh = () => {
   if (refresh_icon.value.transform != "rotate(360deg)") {
@@ -119,7 +132,6 @@ nav {
   text-align: center;
 }
 .root {
-
   width: 1200px;
   margin: 40px auto;
   .refresh_btn {
@@ -134,7 +146,6 @@ nav {
   vertical-align: top;
   width: 200px;
   margin: 40px 20px;
-
 }
 .n-card {
   max-width: 100%;
@@ -168,5 +179,4 @@ nav {
   font-weight: bold;
   text-overflow: ellipsis;
 }
-
 </style>
