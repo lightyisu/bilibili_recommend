@@ -1,0 +1,172 @@
+<template>
+  <n-scrollbar style="max-height: 100vh">
+    <nav>
+      <h1>
+        <logo />
+        The bilibili Recommend System
+        <n-icon size="20" color="#3b9ffc">
+          <Bolt />
+        </n-icon>
+      </h1>
+    </nav>
+    <div class="root">
+      <n-button @click.native="refresh" class="refresh_btn" type="info" round>
+        刷新
+        <template #icon>
+          <n-icon :style="refresh_icon" class="refresh_icon">
+            <Refresh />
+          </n-icon>
+        </template>
+      </n-button>
+      <br />
+      <div class="wrapper" v-for="(item, index) in items" :key="index">
+        <n-card hoverable>
+          <template v-if="!loading" #cover>
+            <a :href="item.uri" target="_blank">
+              <img :src="item.pic+'@672w_378h_1c.webp'" />
+            </a>
+          </template>
+          <template v-if="loading" #cover>
+            <n-skeleton height="100px" width="100%" />
+          </template>
+        </n-card>
+        <n-card v-if="!loading" class="desc">
+          {{ item.title }}
+        </n-card>
+        <div class="video-info">
+          <n-button
+            size="tiny"
+            v-if="!loading"
+            strong
+            secondary
+            round
+            type="info"
+          >
+            <template #icon>
+              <n-icon>
+                <BrandGooglePlay />
+              </n-icon>
+            </template>
+            {{ formatView(item.stat.view) }}
+          </n-button>
+          <n-button
+            size="tiny"
+            v-if="!loading"
+            strong
+            secondary
+            round
+            type="info"
+          >
+            <template #icon>
+              <n-icon>
+                <LikeOutlined />
+              </n-icon>
+            </template>
+            {{ formatView(item.stat.like) }}
+          </n-button>
+        </div>
+
+        <n-skeleton v-if="loading" :sharp="false" height="30px" width="100%" />
+      </div>
+    </div>
+  </n-scrollbar>
+</template>
+
+<script setup>
+import { onMounted, ref } from "vue";
+import { Refresh, Bolt, BrandGooglePlay } from "@vicons/tabler";
+import { LikeOutlined } from "@vicons/antd";
+import logo from "./components/svg/logo.vue";
+import axios from "axios";
+let items = ref("");
+let loading = ref(true);
+let refresh_icon = ref({
+  transform: "rotate(0deg)",
+});
+let getTheData = () => {
+  loading.value = true;
+  axios.get("http://localhost:8080/recommend").then((res) => {
+    items.value = res.data.data.item;
+    loading.value = false;
+  });
+};
+let refresh = () => {
+  if (refresh_icon.value.transform != "rotate(360deg)") {
+    refresh_icon.value = {
+      transform: "rotate(360deg)",
+    };
+  } else {
+    refresh_icon.value = {
+      transform: "rotate(0deg)",
+    };
+  }
+  getTheData();
+};
+let formatView = (view) => {
+  if (view >= 10000) {
+    return (view / 10000).toFixed(2) + "万";
+  }
+  return view;
+};
+
+onMounted(() => {
+  getTheData();
+});
+</script>
+
+<style lang="scss" scoped>
+nav {
+  text-align: center;
+}
+.root {
+
+  width: 1200px;
+  margin: 40px auto;
+  .refresh_btn {
+    margin-left: 20px;
+  }
+  .refresh_icon {
+    transition: transform 1s ease;
+  }
+}
+.wrapper {
+  display: inline-block;
+  vertical-align: top;
+  width: 200px;
+  margin: 40px 20px;
+
+}
+.n-card {
+  max-width: 100%;
+
+  color: #fff;
+
+  display: inline-block;
+  border-radius: 10px;
+}
+::v-deep .n-card-cover {
+  border-radius: 10px;
+}
+
+::v-deep .n-card-header__main {
+  height: 40px !important;
+  overflow: hidden !important;
+  font-size: 3px !important;
+  font-weight: bold !important;
+}
+::v-deep .n-card__content {
+  height: 64px;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+.desc {
+  background-color: #3b9ffc;
+  height: 80px;
+  overflow: hidden;
+  font-weight: bold;
+  text-overflow: ellipsis;
+}
+
+</style>
