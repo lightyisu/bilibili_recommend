@@ -2,11 +2,9 @@
   <n-scrollbar style="max-height: 100vh">
     <nav>
       <h1>
-        <logo />
-        The bilibili Recommend System
-        <n-icon size="20" color="#3b9ffc">
-          <Bolt />
-        </n-icon>
+        
+        <img :style="{width:'120px'}" src="./assets/Recommend.png" />
+     
       </h1>
     </nav>
     <div class="root">
@@ -82,7 +80,7 @@ import { onMounted, ref } from "vue";
 import { Refresh, Bolt, BrandGooglePlay } from "@vicons/tabler";
 import { LikeOutlined } from "@vicons/antd";
 import logo from "./components/svg/logo.vue";
-import axios from "axios";
+import {getRecommend} from './service/api'
 let items = ref("");
 let loading = ref(true);
 let refresh_icon = ref({
@@ -91,11 +89,9 @@ let refresh_icon = ref({
 let internetStatus=ref('')
 let getTheData = () => {
   loading.value = true;
-  axios
-    .get("http://localhost:8080/recommend")
-    .then((res) => {
+  getRecommend().then((res) => {
       internetStatus.value=''
-      items.value = res.data.data.item;
+      items.value = res.data.item;
       loading.value = false;
     })
     .catch((err) => {
@@ -130,6 +126,8 @@ onMounted(() => {
 <style lang="scss" scoped>
 nav {
   text-align: center;
+  background-color: #fff;
+  padding: 6px;
 }
 .root {
   width: 1200px;
@@ -150,7 +148,7 @@ nav {
 .n-card {
   max-width: 100%;
 
-  color: #fff;
+  
 
   display: inline-block;
   border-radius: 10px;
@@ -173,7 +171,7 @@ nav {
   overflow: hidden;
 }
 .desc {
-  background-color: #3b9ffc;
+  background-color: #fff;
   height: 80px;
   overflow: hidden;
   font-weight: bold;
