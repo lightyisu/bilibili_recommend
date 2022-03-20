@@ -2,9 +2,7 @@
   <n-scrollbar style="max-height: 100vh">
     <nav>
       <h1>
-        
-        <img :style="{width:'120px'}" src="./assets/Recommend.png" />
-     
+        <img :style="{ width: '120px' }" src="./assets/Recommend.png" />
       </h1>
     </nav>
     <div class="root">
@@ -17,57 +15,74 @@
         </template>
       </n-button>
       <br />
-      <div class="wrapper" v-for="(item, index) in items" :key="index">
-        <n-card hoverable>
-          <template v-if="!loading" #cover>
-            <a :href="item.uri" target="_blank">
-              <img :src="item.pic + '@672w_378h_1c.webp'" />
-            </a>
-          </template>
-          <template v-if="loading" #cover>
-            <n-skeleton height="100px" width="100%" />
-          </template>
-        </n-card>
-        <n-card v-if="!loading" class="desc">
-          {{ item.title }}
-        </n-card>
-        <div class="video-info">
-          <n-button
-            size="tiny"
-            v-if="!loading"
-            strong
-            secondary
-            round
-            type="info"
-          >
-            <template #icon>
-              <n-icon>
-                <BrandGooglePlay />
-              </n-icon>
+      <div v-if="!internetStatus" class="content">
+        <div class="wrapper" v-for="(item, index) in items" :key="index">
+          <n-card hoverable>
+            <template v-if="!loading" #cover>
+              <a :href="item.uri" target="_blank">
+                <img :src="item.pic + '@672w_378h_1c.webp'" />
+              </a>
             </template>
-            {{ formatView(item.stat.view) }}
-          </n-button>
-          <n-button
-            size="tiny"
-            v-if="!loading"
-            strong
-            secondary
-            round
-            type="info"
-          >
-            <template #icon>
-              <n-icon>
-                <LikeOutlined />
-              </n-icon>
+            <template v-if="loading" #cover>
+              <n-skeleton height="100px" width="100%" />
             </template>
-            {{ formatView(item.stat.like) }}
-          </n-button>
-        </div>
+          </n-card>
+          <n-card v-if="!loading" class="desc">
+            {{ item.title }}
+          </n-card>
+          <div class="video-info">
+            <n-button
+              size="tiny"
+              v-if="!loading"
+              strong
+              secondary
+              round
+              type="info"
+            >
+              <template #icon>
+                <n-icon>
+                  <BrandGooglePlay />
+                </n-icon>
+              </template>
+              {{ formatView(item.stat.view) }}
+            </n-button>
+            <n-button
+              size="tiny"
+              v-if="!loading"
+              strong
+              secondary
+              round
+              type="info"
+            >
+              <template #icon>
+                <n-icon>
+                  <LikeOutlined />
+                </n-icon>
+              </template>
+              {{ formatView(item.stat.like) }}
+            </n-button>
+          </div>
 
-        <n-skeleton v-if="loading" :sharp="false" height="30px" width="100%" />
+          <n-skeleton
+            v-if="loading"
+            :sharp="false"
+            height="30px"
+            width="100%"
+          />
+        </div>
       </div>
+      <div v-if="infinityLoading && !internetStatus" class="infinity-loading">
+        <n-spin size="medium" />
+      </div>
+
+      <div class="infinity-boundary" v-if="!internetStatus">底部</div>
     </div>
-    <n-result v-if="internetStatus=='noInternet'" status="500" title="API错误" description="可能未连上后端服务器">
+    <n-result
+      v-if="internetStatus == 'noInternet'"
+      status="500"
+      title="API错误"
+      description="可能未连上后端服务器"
+    >
       <template #footer>
         <n-button>好的</n-button>
       </template>
@@ -79,25 +94,35 @@
 import { onMounted, ref } from "vue";
 import { Refresh, Bolt, BrandGooglePlay } from "@vicons/tabler";
 import { LikeOutlined } from "@vicons/antd";
-import logo from "./components/svg/logo.vue";
-import {getRecommend} from './service/api'
+import { getRecommend } from "./service/api";
+import infiniteDetect from "./utils/infinityScroll";
+import throttle from "./utils/throttle";
 let items = ref("");
 let loading = ref(true);
+let infinityLoading = ref(false);
 let refresh_icon = ref({
   transform: "rotate(0deg)",
 });
-let internetStatus=ref('')
+let internetStatus = ref("");
 let getTheData = () => {
   loading.value = true;
-  getRecommend().then((res) => {
-      internetStatus.value=''
+  getRecommend()
+    .then((res) => {
+      internetStatus.value = "";
       items.value = res.data.item;
       loading.value = false;
     })
     .catch((err) => {
       console.log("err", err);
-      internetStatus.value='noInternet'
+      internetStatus.value = "noInternet";
     });
+};
+let appendTheData = () => {
+  infinityLoading.value = true;
+  getRecommend().then((res) => {
+    items.value.push(...res.data.item);
+    infinityLoading.value = false;
+  });
 };
 let refresh = () => {
   if (refresh_icon.value.transform != "rotate(360deg)") {
@@ -119,6 +144,13 @@ let formatView = (view) => {
 };
 
 onMounted(() => {
+  infiniteDetect(
+    ".infinity-boundary",
+    throttle(() => {
+      console.log("ok");
+      appendTheData();
+    }, 2000)
+  );
   getTheData();
 });
 </script>
@@ -138,6 +170,16 @@ nav {
   .refresh_icon {
     transition: transform 1s ease;
   }
+  .content {
+    min-height: 100vh;
+  }
+  .infinity-boundary {
+    margin-top: 100px;
+    text-align: center;
+  }
+  .infinity-loading {
+    text-align: center;
+  }
 }
 .wrapper {
   display: inline-block;
@@ -147,8 +189,6 @@ nav {
 }
 .n-card {
   max-width: 100%;
-
-  
 
   display: inline-block;
   border-radius: 10px;
